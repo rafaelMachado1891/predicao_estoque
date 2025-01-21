@@ -1,10 +1,20 @@
+# %%
 import pandas as pd
 caminho = 'C:/Users/PCP/Documents/repositorios_git/predicao_estoque/movimento_estoque.csv'
 # %%
 df = pd.read_csv(caminho, delimiter=';')
 # %%
-df['MOVIMENTO'] = pd.to_numeric(df['MOVIMENTO'], errors='coerce')
+df['TOTAL_MOVIMENTO'] = pd.to_numeric(df['TOTAL_MOVIMENTO'], errors='coerce')
 # %%
-media_consumo = df.groupby(['Codigo'],)['MOVIMENTO'].mean()
+consumo_agregate = df.groupby(['Codigo', 'ANO', 'MES'])['TOTAL_MOVIMENTO'].sum().reset_index()
+
+# %%
+consumo_agregate
+
+# %%
+df = df.merge(consumo_agregate, on=['Codigo', 'ANO', 'MES'])
 
 
+# %%
+df
+# %%

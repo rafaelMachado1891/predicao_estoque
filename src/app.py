@@ -1,19 +1,19 @@
 import pandas as pd
 
 caminho = pd.read_csv("../movimento_estoque.csv",sep=";")
-produto_terceiro = pd.read_csv("../produto_terceiros.csv",sep=";")
+produto_terceiro = pd.read_csv("../produtos_terceiros.csv",sep=";")
 
 df_prod= pd.DataFrame(produto_terceiro)
 df = pd.DataFrame(caminho)
 
 colunas = ['Codigo', "Descricao", "MES", "ANO", "TOTAL_MOVIMENTO"]
-colunas_prod = ["Codigo", "Estoque_Minimo", "Cod_Terc"]
+colunas_prod = ["Codigo", "Estoque_Minimo", "Cod_Terc", "Lead_time"]
 
 df_prod=df_prod[colunas_prod]
 df=df[colunas]
 
 rename_columns={"Codigo": "codigo", "Descricao":"descricao","MES": "mes", "ANO": "ano", "TOTAL_MOVIMENTO": "quantidade"}
-rename_columns_prod={"Codigo": "codigo", "Estoque_Minimo": "estoque", "Cod_Terc": "terceiro"}
+rename_columns_prod={"Codigo": "codigo", "Estoque_Minimo": "estoque", "Cod_Terc": "terceiro", "Lead_time": "lead_time"}
 
 df.rename(columns=rename_columns,inplace=True)
 df_prod.rename(columns=rename_columns_prod, inplace=True)
@@ -21,7 +21,8 @@ df_prod.rename(columns=rename_columns_prod, inplace=True)
 tipo_dados_prod = {
     "codigo": str,
     "estoque": int,
-    "terceiro": int
+    "terceiro": int,
+    "lead_time": int
 }
 
 print(df_prod)

@@ -34,7 +34,9 @@ data_consulta = pd.to_datetime(data_consulta, format="%Y/%m/%d", errors="coerce"
 
 df = df.loc[df["data"]>= data_consulta]
 
-agregate = df.groupby(by=["codigo", "descricao"],as_index=False).agg({"quantidade":["sum","min","max","var","mean","std","count"]})
+agregate = df.groupby(by=["codigo", "descricao"],as_index=False).agg({"quantidade":["sum","min","max","var","mean","std","count",
+                                                                                     "median", lambda x: x.quantile(0.25), 
+                                                                                               lambda x: x.quantile(0.75)]})
 
 agregate.columns = ['_'.join(col).strip('_') for col in agregate.columns.values]
 
@@ -44,7 +46,8 @@ df["calculo_estoque"] = round(df["quantidade_mean"] + (3 * df["quantidade_std"])
 
 df["amplitude"] = df["quantidade_max"] - df["quantidade_min"]
 
-selecao = ["codigo", "descricao", "quantidade_sum", "quantidade_mean", "calculo_estoque","quantidade_min","quantidade_max" ,"quantidade_var", "amplitude","quantidade_std", "quantidade_count"]
+selecao = ["codigo", "descricao", "quantidade_sum", "quantidade_mean", "calculo_estoque","quantidade_min","quantidade_max" ,"quantidade_var", "amplitude",
+           "quantidade_std", "quantidade_count", "quantidade_median", "quantidade_quantile(0.25)", "quantidade_quantile(0.75)"]
 
 df = df[selecao].copy()
 

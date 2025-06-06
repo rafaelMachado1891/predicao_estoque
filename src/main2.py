@@ -53,8 +53,6 @@ df["calculo_estoque"] = round(df["quantidade_mean"] + (3 * df["quantidade_std"])
 
 df["amplitude"] = df["quantidade_max"] - df["quantidade_min"]
 
-print(df)
-
 selecao = ["codigo", "descricao", "quantidade_sum", "quantidade_mean", "calculo_estoque","quantidade_min","quantidade_max" ,"quantidade_var", "amplitude",
            "quantidade_std", "quantidade_count", "quantidade_median", "quantidade_q1", "quantidade_q3"]
 
@@ -69,5 +67,8 @@ nome = { "quantidade_sum": "soma", "quantidade_mean": "media", "calculo_estoque"
 
 df.rename(columns=nome, inplace= True)
 
-df.to_csv("correios.csv",index=False)
+df.to_csv("correios_ano2025.csv",index=False)
+
+
+
 

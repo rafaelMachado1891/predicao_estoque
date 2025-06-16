@@ -34,6 +34,8 @@ data_consulta = pd.to_datetime(data_consulta, format="%Y/%m/%d", errors="coerce"
 
 df = df.loc[df["data"]>= data_consulta]
 
+print(df)
+
 agregate = df.groupby(by=["codigo", "descricao", "data"], as_index=False).agg(
     quantidade_sum=("quantidade", "sum"),
     quantidade_min=("quantidade", "min"),

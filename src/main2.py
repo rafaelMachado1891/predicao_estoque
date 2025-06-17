@@ -34,6 +34,12 @@ data_consulta = pd.to_datetime(data_consulta, format="%Y/%m/%d", errors="coerce"
 
 df = df.loc[df["data"]>= data_consulta]
 
+filtro_codigo = df['codigo'] == '1114'
+
+df = df[filtro_codigo]
+
+df['descricao'] = df['descricao'].str.rstrip()
+
 agregate = df.groupby(by=["codigo", "descricao"], as_index=False).agg(
     quantidade_sum=("quantidade", "sum"),
     quantidade_min=("quantidade", "min"),

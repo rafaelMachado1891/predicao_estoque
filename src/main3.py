@@ -34,38 +34,24 @@ data_consulta = pd.to_datetime(data_consulta, format="%Y/%m/%d", errors="coerce"
 
 df = df.loc[df["data"]>= data_consulta]
 
-print(df)
+df["descricao"] = df["descricao"].str.rstrip()
 
-agregate = df.groupby(by=["codigo", "descricao", "data"], as_index=False).agg(
+agregate = df.groupby(by=["codigo", "descricao", "quantidade"], as_index=False).agg(
     quantidade_sum=("quantidade", "sum"),
-    quantidade_min=("quantidade", "min"),
-    quantidade_max=("quantidade", "max"),
-    quantidade_var=("quantidade", "var"),
-    quantidade_mean=("quantidade", "mean"),
-    quantidade_std=("quantidade", "std"),
-    quantidade_count=("quantidade", "count"),
-    quantidade_median=("quantidade", "median"),
-    quantidade_q1=("quantidade", lambda x: x.quantile(0.25)),
-    quantidade_q3=("quantidade", lambda x: x.quantile(0.75))
+    quantidade_count=("quantidade", "count")
 )
 
 df = agregate
 
-df["calculo_estoque"] = round(df["quantidade_mean"] + (3 * df["quantidade_std"]),0)
-
-df["amplitude"] = df["quantidade_max"] - df["quantidade_min"]
-
-selecao = ["data", "codigo", "descricao", "quantidade_sum", "quantidade_mean", "calculo_estoque","quantidade_min","quantidade_max" ,"quantidade_var", "amplitude",
-           "quantidade_std", "quantidade_count", "quantidade_median", "quantidade_q1", "quantidade_q3"]
+selecao = ["codigo", "descricao", "quantidade" , "quantidade_sum", "quantidade_count"]
 
 df = df[selecao].copy()
 
-total = df["quantidade_count"].sum()
+total = df.groupby(by="codigo")["quantidade_count"].transform("sum")
 
 df["frequencia_relativa"] = round(df["quantidade_count"] / total, 4 )
 
-nome = { "quantidade_sum": "soma", "quantidade_mean": "media", "calculo_estoque": "calculo", "quantidade_min": "minimo", "quantidade_max": "maximo", "quantidade_var": "variancia", 
-         "quantidade_std": "desvio_padrao", "quantidade_count": "frequencia"}
+nome = { "quantidade_sum": "soma", "quantidade_count": "frequencia"}
 
 df.rename(columns=nome, inplace= True)
 

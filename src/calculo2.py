@@ -1,0 +1,128 @@
+import pandas as pd
+import re
+
+# === 1. Leitura e preparação inicial ===
+caminho = pd.read_csv("../estoque_correios.csv", sep=";")
+
+colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO"]
+df = caminho[colunas]
+
+rename_columns = {
+    "Numero": "numero", "Data_EM": "data", "Codigo": "codigo", "Descricao": "descricao",
+    "Quantidade": "quantidade", "Pedido": "pedido", "MARCA": "marca", "GRUPO": "grupo"
+}
+df.rename(columns=rename_columns, inplace=True)
+
+#filtro_codigo = df["codigo"] == 10827
+
+#df = df[filtro_codigo]
+
+def normalizar_descricao(descricao):
+    # Remove prefixo EC (caso ainda não tenha sido removido)
+    if descricao.startswith("EC "):
+        descricao = descricao[3:]
+    
+    descricao = descricao.upper()  # Padroniza para maiúsculas
+
+    # Remover sufixos desnecessários
+    descricao = re.sub(r"\b(TER(M)?)\b", "", descricao)  # TER ou TERM
+
+    # Corrigir abreviações inconsistentes
+    descricao = re.sub(r"\bARAND\b", "ARANDELA", descricao)
+    descricao = re.sub(r"\bLAM\b", "LAMP", descricao)  # lam para lamp
+
+    # Corrigir pontuação e separadores
+    descricao = descricao.replace(",", " ")  # troca vírgula por espaço
+    descricao = descricao.replace("NAT", " ")
+    descricao = descricao.replace("-SACO", " ")
+
+    # Reduz espaços múltiplos para um só
+    descricao = re.sub(r"\s+", " ", descricao)
+
+    return descricao.strip() 
+    
+df = df.astype({
+    "numero": int,
+    "data": object,
+    "codigo": str,
+    "descricao": str,
+    "quantidade": int,
+    "pedido": int,
+    "marca": str,
+    "grupo": str
+})
+
+df["descricao"] = df["descricao"].apply(normalizar_descricao)
+
+print(df)
+
+# === 2. Conversão da data e filtro ===
+df["data"] = pd.to_datetime(df["data"], dayfirst=True, errors="coerce")
+data_consulta = input("A partir de qual data você deseja consultar? (ano/mes/dia): ")
+data_consulta = pd.to_datetime(data_consulta, format="%Y/%m/%d", errors="coerce")
+df = df.loc[df["data"] >= data_consulta]
+
+df["descricao"] = df["descricao"].str.rstrip()
+
+df = df.groupby(["descricao", "data"], as_index=False)["quantidade"].sum()
+
+print(df)
+
+# === 3. Estatísticas por produto ===
+df_estatisticas = df.groupby(["descricao"], as_index=False).agg(
+    quantidade_sum=("quantidade", "sum"),
+    quantidade_min=("quantidade", "min"),
+    quantidade_max=("quantidade", "max"),
+    quantidade_var=("quantidade", "var"),
+    quantidade_mean=("quantidade", "mean"),
+    quantidade_std=("quantidade", "std"),
+    quantidade_count=("quantidade", "count"),
+    quantidade_median=("quantidade", "median"),
+    quantidade_q1=("quantidade", lambda x: x.quantile(0.25)),
+    quantidade_q3=("quantidade", lambda x: x.quantile(0.75))
+)
+
+df_estatisticas["calculo_estoque"] = round(df_estatisticas["quantidade_mean"] + (3 * df_estatisticas["quantidade_std"]), 0)
+df_estatisticas["amplitude"] = df_estatisticas["quantidade_max"] - df_estatisticas["quantidade_min"]
+
+# Seleção e renomeação final das colunas
+df_estatisticas = df_estatisticas[[
+    "descricao", "quantidade_sum", "quantidade_mean", "calculo_estoque",
+    "quantidade_min", "quantidade_max", "quantidade_var", "amplitude",
+    "quantidade_std", "quantidade_count", "quantidade_median", "quantidade_q1", "quantidade_q3"
+]]
+
+df_estatisticas.rename(columns={
+    "quantidade_sum": "soma",
+    "quantidade_mean": "media",
+    "calculo_estoque": "calculo",
+    "quantidade_min": "minimo",
+    "quantidade_max": "maximo",
+    "quantidade_var": "variancia",
+    "quantidade_std": "desvio_padrao",
+    "quantidade_count": "frequencia"
+}, inplace=True)
+
+# Frequência relativa geral
+total_geral = df_estatisticas["frequencia"].sum()
+df_estatisticas["frequencia_relativa"] = round(df_estatisticas["frequencia"] / total_geral, 4)
+
+# === 4. Frequência relativa por quantidade ===
+df_freq = df.groupby(["descricao", "quantidade"], as_index=False).agg(
+    quantidade_count=("quantidade", "count")
+)
+
+df_freq["total_produto"] = df_freq.groupby("descricao")["quantidade_count"].transform("sum")
+df_freq["frequencia_relativa"] = round(df_freq["quantidade_count"] / df_freq["total_produto"], 4)
+
+# Pivotando: cada coluna será uma quantidade
+df_pivot = df_freq.pivot(index="descricao", columns="quantidade", values="frequencia_relativa").fillna(0)
+df_pivot.columns = [f"qtd_{int(col)}_emb" for col in df_pivot.columns]
+df_pivot.reset_index(inplace=True)
+
+# === 5. Merge final ===
+df_final = df_estatisticas.merge(df_pivot, on="descricao", how="left")
+
+# === 6. Exportar resultado ===
+df_final.to_csv("relatorio_produtos_completo.csv", index=False)
+print("✅ Relatório final gerado: 'relatorio_produtos_completo.csv'")

@@ -38,6 +38,8 @@ def normalizar_descricao(descricao):
 
     # Reduz espaços múltiplos para um só
     descricao = re.sub(r"\s+", " ", descricao)
+    
+    descricao = descricao.replace("8147 PR BALIZADOR L/C P/JD E MURO P/1LAM", "8147 PR BALIZADOR L/C P/JD/ MURO P/1L")
 
     return descricao.strip() 
     

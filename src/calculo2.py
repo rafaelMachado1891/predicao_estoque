@@ -2,7 +2,7 @@ import pandas as pd
 import re
 
 # === 1. Leitura e preparação inicial ===
-caminho = pd.read_csv("../estoque_correios.csv", sep=";")
+caminho = pd.read_csv("../estoque_correios.csv", sep=",")
 
 colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO"]
 df = caminho[colunas]
@@ -84,7 +84,7 @@ df_estatisticas = df.groupby(["descricao"], as_index=False).agg(
     quantidade_q3=("quantidade", lambda x: x.quantile(0.75))
 )
 
-df_estatisticas["calculo_estoque"] = round(df_estatisticas["quantidade_mean"] + (3 * df_estatisticas["quantidade_std"]), 0)
+df_estatisticas["calculo_estoque"] = round(df_estatisticas["quantidade_mean"] + (5 * df_estatisticas["quantidade_std"]), 0)
 df_estatisticas["amplitude"] = df_estatisticas["quantidade_max"] - df_estatisticas["quantidade_min"]
 
 # Seleção e renomeação final das colunas
@@ -102,7 +102,8 @@ df_estatisticas.rename(columns={
     "quantidade_max": "maximo",
     "quantidade_var": "variancia",
     "quantidade_std": "desvio_padrao",
-    "quantidade_count": "frequencia"
+    "quantidade_count": "frequencia",
+    "quantidade_median": "mediana"
 }, inplace=True)
 
 # Frequência relativa geral

@@ -1,14 +1,14 @@
 import pandas as pd
 
 # === 1. Leitura e preparação inicial ===
-caminho = pd.read_csv("../estoque_correios.csv", sep=";")
+caminho = pd.read_csv("../estoque_correios.csv", sep=",")
 
-colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO"]
+colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO", "NUMERO_SEMANA", "ANO"]
 df = caminho[colunas]
 
 rename_columns = {
     "Numero": "numero", "Data_EM": "data", "Codigo": "codigo", "Descricao": "descricao",
-    "Quantidade": "quantidade", "Pedido": "pedido", "MARCA": "marca", "GRUPO": "grupo"
+    "Quantidade": "quantidade", "Pedido": "pedido", "MARCA": "marca", "GRUPO": "grupo", "NUMERO_SEMANA": "numero_semana", "ANO": "ano"
 }
 df.rename(columns=rename_columns, inplace=True)
 
@@ -20,7 +20,9 @@ df = df.astype({
     "quantidade": int,
     "pedido": int,
     "marca": str,
-    "grupo": str
+    "grupo": str,
+    "numero_semana": int,
+    "ano": int
 })
 
 # === 2. Conversão da data e filtro ===
@@ -31,21 +33,26 @@ df = df.loc[df["data"] >= data_consulta]
 
 df["descricao"] = df["descricao"].str.rstrip()
 
+df_estatisticas = df.groupby(["codigo", "descricao", "ano", "numero_semana"], as_index=False).agg(
+quantidade_sum=("quantidade", "sum"))
+
+print(df_estatisticas)
+
 # === 3. Estatísticas por produto ===
-df_estatisticas = df.groupby(["codigo", "descricao"], as_index=False).agg(
-    quantidade_sum=("quantidade", "sum"),
-    quantidade_min=("quantidade", "min"),
-    quantidade_max=("quantidade", "max"),
-    quantidade_var=("quantidade", "var"),
-    quantidade_mean=("quantidade", "mean"),
-    quantidade_std=("quantidade", "std"),
-    quantidade_count=("quantidade", "count"),
-    quantidade_median=("quantidade", "median"),
-    quantidade_q1=("quantidade", lambda x: x.quantile(0.25)),
-    quantidade_q3=("quantidade", lambda x: x.quantile(0.75))
+df_estatisticas = df_estatisticas.groupby(["codigo", "descricao"], as_index=False).agg(
+    quantidade_sum=("quantidade_sum", "sum"),
+    quantidade_min=("quantidade_sum", "min"),
+    quantidade_max=("quantidade_sum", "max"),
+    quantidade_var=("quantidade_sum", "var"),
+    quantidade_mean=("quantidade_sum", "mean"),
+    quantidade_std=("quantidade_sum", "std"),
+    quantidade_count=("quantidade_sum", "count"),
+    quantidade_median=("quantidade_sum", "median"),
+    quantidade_q1=("quantidade_sum", lambda x: x.quantile(0.25)),
+    quantidade_q3=("quantidade_sum", lambda x: x.quantile(0.75))
 )
 
-df_estatisticas["calculo_estoque"] = round(df_estatisticas["quantidade_mean"] + (3 * df_estatisticas["quantidade_std"]), 0)
+df_estatisticas["calculo_estoque"] = round(df_estatisticas["quantidade_mean"] + (1.5 * df_estatisticas["quantidade_std"]), 0)
 df_estatisticas["amplitude"] = df_estatisticas["quantidade_max"] - df_estatisticas["quantidade_min"]
 
 # Seleção e renomeação final das colunas
@@ -87,5 +94,5 @@ df_pivot.reset_index(inplace=True)
 df_final = df_estatisticas.merge(df_pivot, on="codigo", how="left")
 
 # === 6. Exportar resultado ===
-df_final.to_csv("relatorio_produtos_completo.csv", index=False)
+df_final.to_csv("relatorio_produtos_completo2.csv", index=False)
 print("✅ Relatório final gerado: 'relatorio_produtos_completo.csv'")

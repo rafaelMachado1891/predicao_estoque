@@ -1,4 +1,5 @@
 import pandas as pd
+from pandas.tseries.offsets import DateOffset
 from datetime import datetime
 
 caminho = "../estoque_correios.csv"
@@ -39,50 +40,66 @@ df = df.astype({
     "semestre": int
 })
 
-consumo_semanal = df.groupby(["codigo", "descricao","ano","numero_semana" ],as_index=False).agg(quantidade_semana=("quantidade", "sum"))                                                                                     
+last_row = df["data"].loc[df['data'].idxmax()]
+ultima_data = df["data"].max()
+ultima_semana = ultima_data - DateOffset(weeks=1)
+ultimo_ano = ultima_data - DateOffset(months=12)
+ultimo_trimestre = ultima_data - DateOffset(months=3)
+ultimo_semestre = ultima_data - DateOffset(months=6)
+ultimo_mes = ultima_data - DateOffset(months=1)
+
+consumo_semanal = df[df["data"] >= ultima_semana].groupby(["codigo", "descricao"],as_index=False).agg(quantidade_semana=("quantidade", "sum"))                                                                                                                                                                                                                                                          
                                                                                                 
-consumo_mensal = df.groupby(["codigo", "descricao", "mes-ano"],as_index=False).agg(quantidade_mes=("quantidade", "sum"))
+consumo_mensal = df[df["data"] >= ultimo_mes].groupby(["codigo", "descricao"],as_index=False).agg(quantidade_mes=("quantidade", "sum"))
 
-consumo_trimestre = df.groupby(["codigo", "descricao", "trimestre", "ano"], as_index=False).agg(quantidade_trimestre=("quantidade", "sum"))
+consumo_trimestre = df[df["data"] >= ultimo_trimestre].groupby(["codigo", "descricao"], as_index=False).agg(quantidade_trimestre=("quantidade", "sum"))
 
-consumo_semestre = df.groupby(["codigo", "descricao", "ano", "semestre"], as_index=False).agg(quantidade_semestre=("quantidade", "sum"))
+consumo_semestre = df[df["data"] >= ultimo_semestre].groupby(["codigo", "descricao"], as_index=False).agg(quantidade_semestre=("quantidade", "sum"))                                                                                                          
 
-consumo_geral = df.groupby(["codigo", "descricao"], as_index=False).agg(quantidade=("quantidade", "sum"), 
-                                                                        media_geral=("quantidade", "mean")
-                                                                    )
+consumo_geral = df.groupby(["codigo", "descricao", "numero_semana", "ano"], as_index=False).agg(quantidade_geral=("quantidade", "sum"),
+                                                                                                frequencia_geral=("descricao", "count")
+                                                                                                )
+consumo_geral = consumo_geral.groupby(["codigo", "descricao"], as_index=False).agg(quantidade_geral=("quantidade_geral", "sum"),
+                                                                                   media_semana=("quantidade_geral", "mean"),
+                                                                                   desvio_semana=("quantidade_geral", "std"),
+                                                                                   frequencia_geral=("frequencia_geral","sum")
+                                                                                   )                                                                                         
 
-estoque_ideal = consumo_semanal.groupby(["codigo", "descricao"], as_index=False).agg(quantidade=("quantidade_semana", "sum"),
-                                                                                     media_semana=("quantidade_semana","mean"),
-                                                                                     desvio_semana=("quantidade_semana","std")
-                                                                                     )
+consumo_geral["estoque_ideal"] = (consumo_geral["media_semana"] + consumo_geral["desvio_semana"] * 1.5).round()
 
-estoque_ideal["estoque_ideal"] = (estoque_ideal["media_semana"] + estoque_ideal["desvio_semana"] * 1.5).round()
+consumo_geral["rank_geral"] = consumo_geral["quantidade_geral"].rank(ascending=False, method="dense").astype(int)
 
-last_row = df.loc[df['data'].idxmax()]
-ultima_semana = int(last_row['numero_semana'])
-ultimo_ano = df["ano"].max()
-ultimo_trimestre = int(last_row["trimestre"])
-ultimo_semestre = int(last_row["semestre"])
-ultimo_mes = int(last_row["mes"])
+consumo_semanal["rank_semana"] = consumo_semanal["quantidade_semana"].rank(ascending=False, method="dense").astype(int)
 
-rank_atual = consumo_semanal[(consumo_semanal["ano"] == ultimo_ano) & 
-                             (consumo_semanal["numero_semana"] == ultima_semana)
-                             ].copy()
-rank_atual["rank_atual"] = rank_atual["quantidade_semana"].rank(ascending=False, method="dense").astype(int)
+consumo_trimestre["rank_trim"] = consumo_trimestre["quantidade_trimestre"].rank(ascending=False, method="dense").astype(int)
+
+consumo_semestre["rank_semestre"] = consumo_semestre["quantidade_semestre"].rank(ascending=False, method="dense").astype(int)
+
+consumo_mensal["rank_mensal"] = consumo_mensal["quantidade_mes"].rank(ascending=False, method="dense").astype(int)
 
 
-rank_trim = consumo_trimestre[
-    (consumo_trimestre["ano"] == ultimo_ano) &
-    (consumo_trimestre["trimestre"] == ultimo_trimestre)
-].copy()
-rank_trim["rank_trim"] = rank_trim["quantidade_trimestre"].rank(ascending=False, method="dense").astype(int)
+relatorio = consumo_geral.merge(consumo_mensal[["codigo", "rank_mensal"]], on="codigo", how="left")
+relatorio = relatorio.merge(consumo_trimestre[["codigo", "rank_trim"]], on="codigo", how="left")
+relatorio = relatorio.merge(consumo_semestre[["codigo", "rank_semestre"]], on="codigo", how="left")
+relatorio = relatorio.merge(consumo_semanal[["codigo", "rank_semana", "quantidade_semana"]], on="codigo", how="left")
 
-rank_semestre = consumo_semestre[
-    (consumo_semestre["ano"] == ultimo_ano) &
-    (consumo_semestre["semestre"] == ultimo_semestre)
-].copy()
-rank_semestre["rank_semestre"] = rank_semestre["quantidade_semestre"].rank(ascending=False, method="dense").astype(int)
+# relatorio.fillna(0, method=None, inplace= True)
 
-print(rank_semestre)
+def classificar_tendencia(row, col1, col2):
+    if pd.isna(row[col1]) or pd.isna(row[col2]):
+        return "sem dado"
+    if row[col1] < row[col2]:
+        return "acsendente"
+    elif row[col1] > row[col2]:
+        return "descendente"
+    else: 
+        return "estavel"
 
-# media_diaria = media_diaria.aggregate()
+relatorio["tendencia_mes_vs_trim"] = relatorio.apply(lambda r: classificar_tendencia(r, "rank_mensal", "rank_trim"), axis=1)
+relatorio["tendencia_trim_vs_semestre"] = relatorio.apply(lambda r: classificar_tendencia(r, "rank_trim", "rank_semestre"), axis=1 )
+relatorio["tendencia_semana_vs_mensal"] = relatorio.apply(lambda r: classificar_tendencia(r, "rank_semana", "rank_mensal"), axis=1)
+relatorio["tendencia_trimestre_vs_geral"] = relatorio.apply(lambda r: classificar_tendencia( r, "rank_trim", "rank_geral"), axis=1)
+relatorio["tendencia_semestre_vs_geral"] = relatorio.apply(lambda r: classificar_tendencia(r, "rank_semestre", "rank_geral"), axis=1 )
+
+relatorio.to_excel("relatorio.xlsx", index=False)
+

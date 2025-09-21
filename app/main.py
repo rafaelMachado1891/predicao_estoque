@@ -9,8 +9,9 @@ df['Data_EM'] = pd.to_datetime(df['Data_EM'], errors='coerce')
 
 df['trimestre'] = df['Data_EM'].dt.quarter
 df['dia_semana'] = df['Data_EM'].dt.day_of_week
+df['semestre'] = df["MES"].apply(lambda m: 1 if m <=6  else 2)
 
-colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO", "NUMERO_SEMANA", "ANO", "trimestre", "dia_semana", "MES", "MES-ANO"]
+colunas = ["Numero", "Data_EM", "Codigo", "Descricao", "Quantidade", "Pedido", "MARCA", "GRUPO", "NUMERO_SEMANA", "ANO", "trimestre", "dia_semana", "MES", "MES-ANO", "semestre"]
 
 df = df[colunas]
 
@@ -34,28 +35,54 @@ df = df.astype({
     "mes-ano": str,
     "ano": int, 
     "trimestre": int,
-    "dia_semana": int    
+    "dia_semana": int,
+    "semestre": int
 })
 
-# dataframe agrupado por dia 
+consumo_semanal = df.groupby(["codigo", "descricao","ano","numero_semana" ],as_index=False).agg(quantidade_semana=("quantidade", "sum"))                                                                                     
+                                                                                                
+consumo_mensal = df.groupby(["codigo", "descricao", "mes-ano"],as_index=False).agg(quantidade_mes=("quantidade", "sum"))
 
-media_diaria = df
+consumo_trimestre = df.groupby(["codigo", "descricao", "trimestre", "ano"], as_index=False).agg(quantidade_trimestre=("quantidade", "sum"))
 
-media_diaria = media_diaria.groupby(["codigo", "descricao"],as_index=False).aggregate({"quantidade": ["sum", "mean","count"],                                                                                       
-                                                                                        "descricao": "first",
-                                                                                        "marca": "first",
-                                                                                        "grupo": "first"
-                                                                                        })
+consumo_semestre = df.groupby(["codigo", "descricao", "ano", "semestre"], as_index=False).agg(quantidade_semestre=("quantidade", "sum"))
+
+consumo_geral = df.groupby(["codigo", "descricao"], as_index=False).agg(quantidade=("quantidade", "sum"), 
+                                                                        media_geral=("quantidade", "mean")
+                                                                    )
+
+estoque_ideal = consumo_semanal.groupby(["codigo", "descricao"], as_index=False).agg(quantidade=("quantidade_semana", "sum"),
+                                                                                     media_semana=("quantidade_semana","mean"),
+                                                                                     desvio_semana=("quantidade_semana","std")
+                                                                                     )
+
+estoque_ideal["estoque_ideal"] = (estoque_ideal["media_semana"] + estoque_ideal["desvio_semana"] * 1.5).round()
+
+last_row = df.loc[df['data'].idxmax()]
+ultima_semana = int(last_row['numero_semana'])
+ultimo_ano = df["ano"].max()
+ultimo_trimestre = int(last_row["trimestre"])
+ultimo_semestre = int(last_row["semestre"])
+ultimo_mes = int(last_row["mes"])
+
+rank_atual = consumo_semanal[(consumo_semanal["ano"] == ultimo_ano) & 
+                             (consumo_semanal["numero_semana"] == ultima_semana)
+                             ].copy()
+rank_atual["rank_atual"] = rank_atual["quantidade_semana"].rank(ascending=False, method="dense").astype(int)
 
 
-media_mensal = df
+rank_trim = consumo_trimestre[
+    (consumo_trimestre["ano"] == ultimo_ano) &
+    (consumo_trimestre["trimestre"] == ultimo_trimestre)
+].copy()
+rank_trim["rank_trim"] = rank_trim["quantidade_trimestre"].rank(ascending=False, method="dense").astype(int)
 
-media_mensal = media_mensal.groupby(["codigo", "descricao", "ano", "mes"],as_index=False).aggregate({"quantidade": ["sum", "mean","count"],                                                                                       
-                                                                                        "descricao": "first",
-                                                                                        "marca": "first",
-                                                                                        "grupo": "first"
-                                                                                        })
+rank_semestre = consumo_semestre[
+    (consumo_semestre["ano"] == ultimo_ano) &
+    (consumo_semestre["semestre"] == ultimo_semestre)
+].copy()
+rank_semestre["rank_semestre"] = rank_semestre["quantidade_semestre"].rank(ascending=False, method="dense").astype(int)
 
-print(media_diaria)
+print(rank_semestre)
 
 # media_diaria = media_diaria.aggregate()

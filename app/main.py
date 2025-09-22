@@ -101,5 +101,17 @@ relatorio["tendencia_semana_vs_mensal"] = relatorio.apply(lambda r: classificar_
 relatorio["tendencia_trimestre_vs_geral"] = relatorio.apply(lambda r: classificar_tendencia( r, "rank_trim", "rank_geral"), axis=1)
 relatorio["tendencia_semestre_vs_geral"] = relatorio.apply(lambda r: classificar_tendencia(r, "rank_semestre", "rank_geral"), axis=1 )
 
-relatorio.to_excel("relatorio.xlsx", index=False)
+# relatorio de frequencia de vendas
+
+frequencia = df.copy()
+
+frequencia = frequencia.groupby(["codigo", "descricao"], as_index= False).agg(frequencia=("descricao", "count"))
+frequencia['frequencia_relativa'] = frequencia["frequencia"] / (frequencia["frequencia"].sum())
+frequencia["acumulada"] = frequencia["frequencia"].cumsum()
+frequencia["relativa_acumulada"] = frequencia["frequencia_relativa"].cumsum()
+
+print(frequencia)
+
+
+# relatorio.to_excel("relatorio.xlsx", index=False)
 

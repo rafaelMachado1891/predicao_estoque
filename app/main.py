@@ -137,5 +137,10 @@ frequencia.to_excel("relatorio_frequencia.xlsx", index=False)
 
 print(f'relatorio gerado com sucesso!')
 
-print(df)
+embalagens = df.copy()
 
+embalagens = embalagens[embalagens["codigo"] == 10827]
+
+embalagens = embalagens.groupby(["codigo","descricao","pedido","data", "quantidade"], as_index=False).agg(contagem=("descricao", "count"))
+
+print(embalagens.head(50))

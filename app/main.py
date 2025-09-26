@@ -141,6 +141,28 @@ embalagens = df.copy()
 
 embalagens = embalagens[embalagens["codigo"] == 10827]
 
-embalagens = embalagens.groupby(["codigo","descricao","pedido","data", "quantidade"], as_index=False).agg(contagem=("descricao", "count"))
+# contar quantos pedidos saíram por quantidade
+embalagens = (
+    embalagens.groupby(["codigo","descricao","pedido","data","quantidade"], as_index=False)
+    .agg(contagem=("descricao", "count"))
+)
 
-print(embalagens.head(50))
+# resumo por codigo + quantidade
+resumo = (
+    embalagens.groupby(["codigo","quantidade"], as_index=False)
+    .agg(total=("contagem", "sum"))
+)
+
+# total geral por codigo
+proporcao = (
+    embalagens.groupby("codigo")
+    .agg(total=("contagem", "sum"))
+    .reset_index()
+)
+
+# juntar para calcular percentual
+resultado = resumo.merge(proporcao, on="codigo", suffixes=("_parcial","_geral"))
+resultado["percentual_pedidos"] = (resultado["total_parcial"] / resultado["total_geral"] * 100).round(2)
+
+print(resultado)
+

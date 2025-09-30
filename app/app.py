@@ -1,16 +1,18 @@
+from urllib.parse import quote_plus
 import pandas as pd
 from sqlalchemy import create_engine, text
 import psycopg2 
 from dotenv import load_dotenv
 import os
 import pyodbc
+from datetime import datetime
 
 load_dotenv()
 
-DATA_BASE=os.getenv('DB')
-USUARIO=os.getenv('USER')
-PASSWORD=os.getenv('PASS')
-HOST_NAME=os.getenv('HOST')
+DATA_BASE= os.getenv('DB')
+USUARIO= os.getenv('USER')
+PASSWORD= quote_plus(os.getenv('PASS'))
+HOST_NAME= os.getenv('HOST')
 
 DATA_BASE_URL = f"mssql+pyodbc://{USUARIO}:{PASSWORD}@{HOST_NAME}/{DATA_BASE}?driver=ODBC+Driver+17+for+SQL+Server"
 
@@ -23,7 +25,7 @@ query = """
 		,CONVERT(VARCHAR(10), A.Data_EM, 120) AS Data_EM
 		,D.Codigo
 		,B.Quantidade
-		,B.Descricao
+		,D.Referencia
 		,a.Pedido
 		,D.MARCA
 		,D.GRUPO
@@ -42,6 +44,7 @@ query = """
 			SELECT 
 			 A.CODIGO
 			,A.Descricao
+			,A.Referencia
 			,B.descricao AS MARCA
 			,C.Descricao AS GRUPO
 			FROM Produtos A 

@@ -70,5 +70,22 @@ with engine.connect() as connection:
     
     df = pd.DataFrame(result.fetchall(), columns=result.keys()) 
 
+rename_columns = {'Numero': 'numero', 'Data_EM': 'data', 'Codigo': 'codigo', 'Quantidade': 'quantidade', 'Referencia': 'referencia', 'Pedido': 'pedido',
+       			  'MARCA': 'linha', 'GRUPO': 'grupo', 'ANO': 'ano', 'MES': 'mes', 'MES-ANO': 'mes_ano', 'NUMERO_SEMANA': 'semana'
+            }
 
-print(df)
+df = df.rename(columns=rename_columns,inplace=False)
+
+columns = ['numero', 'data', 'codigo', 'referencia', 'quantidade', 'linha', 'grupo']
+
+df = df.astype({
+	'numero': int,
+	'data':"datetime64[ns]",
+	'codigo': str,
+	'referencia': str,
+	'quantidade': int,
+	'linha': str,
+	'grupo': str
+})
+
+print(df.info())

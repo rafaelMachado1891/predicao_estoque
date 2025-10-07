@@ -139,30 +139,57 @@ print(f'relatorio gerado com sucesso!')
 
 embalagens = df.copy()
 
-embalagens = embalagens[embalagens["codigo"] == 10827]
-
-# contar quantos pedidos saíram por quantidade
 embalagens = (
-    embalagens.groupby(["codigo","descricao","pedido","data","quantidade"], as_index=False)
+    embalagens.groupby(["codigo", "descricao", "pedido", "data", "quantidade"], as_index=False)
     .agg(contagem=("descricao", "count"))
 )
 
-# resumo por codigo + quantidade
+# total de pedidos por produto + quantidade (ex: 10827 com 1 unidade = 140 pedidos)
 resumo = (
-    embalagens.groupby(["codigo","quantidade"], as_index=False)
-    .agg(total=("contagem", "sum"))
+    embalagens.groupby(["codigo", "quantidade"], as_index=False)
+    .agg(total_parcial=("contagem", "sum"))
 )
 
-# total geral por codigo
+# total geral de pedidos por produto
 proporcao = (
-    embalagens.groupby("codigo")
-    .agg(total=("contagem", "sum"))
-    .reset_index()
+    embalagens.groupby("codigo", as_index=False)
+    .agg(total_geral=("contagem", "sum"))
 )
 
 # juntar para calcular percentual
-resultado = resumo.merge(proporcao, on="codigo", suffixes=("_parcial","_geral"))
+resultado = resumo.merge(proporcao, on="codigo", how="left")
 resultado["percentual_pedidos"] = (resultado["total_parcial"] / resultado["total_geral"] * 100).round(2)
 
-print(resultado)
+# criar rótulo textual
+resultado["tipo_embalagem"] = resultado["quantidade"].astype(str) + " unidade(s)"
 
+# juntar de volta ao dataframe original
+df_com_embalagem = df.merge(
+    resultado[["codigo", "quantidade", "tipo_embalagem", "percentual_pedidos"]],
+    on=["codigo", "quantidade"],
+    how="left"
+)
+
+embalagem_freq = (
+    df_com_embalagem.groupby(["codigo", "descricao", "tipo_embalagem"], as_index=False)
+    .agg(total_pedidos=("pedido", "nunique"))  # conta quantos pedidos únicos
+)
+
+# total de pedidos por produto
+totais = (
+    df_com_embalagem.groupby("codigo", as_index=False)
+    .agg(total_geral=("pedido", "nunique"))
+)
+
+# juntar para calcular o percentual
+embalagem_freq = embalagem_freq.merge(totais, on="codigo", how="left")
+embalagem_freq["frequencia_percentual"] = (
+    embalagem_freq["total_pedidos"] / embalagem_freq["total_geral"] * 100
+).round(2)
+
+# ordenar por produto e frequência decrescente
+embalagem_freq = embalagem_freq.sort_values(["codigo", "frequencia_percentual"], ascending=[True, False])
+
+embalagem_freq.to_excel("embalagens_correios.xlsx", index=False)
+
+print(embalagem_freq.head(10))

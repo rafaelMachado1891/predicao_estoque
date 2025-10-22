@@ -11,5 +11,17 @@ WITH vendas_agrupadas_por_data AS (
         codigo,
         referencia
     ORDER BY 1,2 
+),
+vendas_agrupada_por_produto AS (
+    SELECT 
+        codigo,
+        referencia,
+        SUM(quantidade) AS quantidade,
+        SUM(total) AS total,
+        COUNT(codigo) AS qtd_pedidos
+    FROM vendas_agrupadas_por_data
+    GROUP BY 
+        codigo,
+        referencia
 )
-SELECT * FROM vendas_agrupadas_por_data
+SELECT * FROM vendas_agrupada_por_produto

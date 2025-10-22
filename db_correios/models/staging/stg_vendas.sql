@@ -7,5 +7,15 @@ WITH raw_vendas AS (
         quantidade ::INTEGER AS quantidade,
         preco :: DECIMAL AS preco
     FROM {{ source ('correios_db', 'vendas') }}
+ ),
+ resultado AS (
+    SELECT 
+     data,
+     codigo,
+     referencia,
+     quantidade,
+     preco,
+     quantidade * preco AS total
+    FROM raw_vendas
  )
- SELECT * FROM raw_vendas
+ SELECT * FROM resultado

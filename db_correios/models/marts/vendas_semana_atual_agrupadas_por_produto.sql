@@ -7,6 +7,11 @@ WITH vendas AS (
 		total
 	FROM {{ ref('int_vendas') }}
 ),
+estoque_correios AS (
+    SELECT 
+        *
+    FROM {{ ref('int_estoque_minimo') }}
+),
 semana_atual AS  (
 	SELECT 
 	    date_day AS data,
@@ -20,27 +25,30 @@ ORDER BY date_day
 resultado AS (
 	SELECT 
 		b.data,
-		codigo,
-		referencia,
-		quantidade,
+		a.codigo,
+		a.referencia,
+		a.quantidade,
+        c.estoque_minimo,
 		total
 	FROM vendas a 
 	JOIN semana_atual b 
 	ON a.data = b.data
+    JOIN estoque_correios c
+    ON a.codigo = c.codigo
 ),
 agrupamento AS (
 	SELECT
-		data,
 		codigo,
 		referencia,
 		SUM(quantidade) AS total_vendido,
+        estoque_minimo,
 		SUM(total) AS total_faturamento,
 		COUNT(referencia) AS numero_pedidos
 	FROM resultado
 	GROUP BY
-		data,
 		codigo,
-		referencia
+		referencia,
+        estoque_minimo
 )
 
 SELECT 

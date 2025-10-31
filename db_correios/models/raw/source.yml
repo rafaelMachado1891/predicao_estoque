@@ -25,6 +25,8 @@ sources:
            data_type: TEXT
            tests:
             - not_null  # Garante que os valores estão em uma lista específica
+         - name: "custo_medio" 
+           description: 'Custo unitario do produto'
          - name: "quantidade"
            description: 'quantidade da venda'
            data_type: INTEGER

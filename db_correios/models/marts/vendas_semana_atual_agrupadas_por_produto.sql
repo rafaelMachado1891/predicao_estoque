@@ -52,7 +52,14 @@ agrupamento AS (
 )
 
 SELECT 
-	
-	*
-  
-FROM agrupamento ORDER BY 5 DESC
+    codigo,
+    referencia,
+    total_vendido,
+    total_faturamento,
+    numero_pedidos,
+    estoque_minimo,
+    CASE WHEN estoque_minimo < total_vendido THEN 'vendas_excederam_estoque'
+    ELSE 'estoque_supriu_as_vendas'
+    END AS obs_estoque
+FROM agrupamento
+ORDER BY numero_pedidos DESC

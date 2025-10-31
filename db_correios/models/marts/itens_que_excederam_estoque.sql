@@ -39,6 +39,21 @@ resultado AS (
      a.quantidade,
      a.total,
      b.estoque_minimo
+),
+agregado AS (
+    SELECT 
+        data,
+        codigo,
+        referencia,
+        quantidade,
+        total,
+        qtde_pedidos,
+        estoque_minimo,
+        CASE
+            WHEN quantidade > estoque_minimo THEN 'quantidade excedeu o estoque minimo'
+            ELSE 'estoque supriu a demanda'
+        END AS obs_pedidos
+    FROM resultado
 )
 SELECT 
     data,
@@ -48,8 +63,6 @@ SELECT
     total,
     qtde_pedidos,
     estoque_minimo,
-    CASE
-        WHEN quantidade > estoque_minimo THEN 'quantidade excedeu o estoque minimo'
-        ELSE 'estoque supriu a demanda'
-    END AS obs_pedidos
-FROM resultado
+    obs_pedidos
+FROM agregado
+WHERE obs_pedidos = 'quantidade excedeu o estoque minimo'

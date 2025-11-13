@@ -3,7 +3,9 @@ WITH vendas AS (
         data,
         codigo,
         referencia,
-        quantidade
+        quantidade,
+        total,
+        custo_total
     FROM {{ ref('int_vendas') }}
 ),
 
@@ -15,7 +17,9 @@ vendas_com_dimensao AS (
         d.iso_week_of_year,     -- ou ISO (segunda a domingo)
         d.week_start_date,
         d.week_end_date,
-        v.quantidade
+        v.quantidade,
+        v.total,
+        v.custo_total
     FROM vendas v
     JOIN {{ ref('dim_date') }} d 
         ON v.data = d.date_day
@@ -28,7 +32,9 @@ vendas_agrupadas_por_semana AS (
         year_number,
         iso_week_of_year AS semana_do_ano,
         COUNT(referencia) AS contagem_pedidos,
-        SUM(quantidade) AS quantidade
+        SUM(quantidade) AS quantidade,
+        SUM(total) AS total,
+        SUM(custo_total) AS custo_total
     FROM vendas_com_dimensao
     GROUP BY 
         codigo,
@@ -41,6 +47,8 @@ calculo_das_vendas AS (
     SELECT 
         codigo,
         referencia,
+        SUM(custo_total) AS custo_total,
+        SUM(total) AS faturamento,
         SUM(contagem_pedidos) AS frequencia,
         SUM(quantidade) AS quantidade,
         ROUND(AVG(quantidade),0) AS media,
@@ -68,7 +76,14 @@ SELECT
     ROUND(
             (frequencia * 100.0) / SUM(frequencia) OVER (),
             2
-    ) AS freq_relativa_percent
+    ) AS freq_relativa_percent,
+    ROUND(
+            SUM(frequencia) OVER (ORDER BY ranking) * 100.0 / SUM(frequencia) OVER (),
+            2
+        ) AS freq_relativa_acumulada_percent,
+    faturamento,
+    custo_total
+
 FROM calculo_das_vendas
 ORDER BY 
    ranking

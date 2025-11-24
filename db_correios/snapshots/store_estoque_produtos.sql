@@ -1,4 +1,4 @@
-{% snapshot stores_snapshot %}
+{% snapshot store_estoque_produtos %}
 
     {{
         config(

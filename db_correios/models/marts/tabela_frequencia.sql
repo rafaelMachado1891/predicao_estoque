@@ -69,7 +69,10 @@ calculo_das_vendas AS (
         MIN(quantidade) AS minimo,
         MAX(quantidade) AS maximo,
         ROW_NUMBER() OVER (ORDER BY SUM(contagem_pedidos) DESC) AS ranking,
-        ROUND(STDDEV_SAMP(quantidade),0) AS desvio_padrao
+        CASE 
+            WHEN COALESCE(ROUND(STDDEV_SAMP(quantidade), 0), 0) = 0 THEN 1
+            ELSE ROUND(STDDEV_SAMP(quantidade), 0)
+        END AS desvio_padrao
         --estoque_minimo
         --#,
         --#COUNT(select count(distinct(referencia)) from vendas_agrupadas_por_semana where obs_pedido = "compras excederam o estoque" )

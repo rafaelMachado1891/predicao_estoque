@@ -7,7 +7,7 @@ WITH vendas AS (
         40.00 AS frete
 
     FROM {{ ref('int_vendas') }}
-    GROUP BY data
+    GROUP BY  data
 )
 select 
     data,

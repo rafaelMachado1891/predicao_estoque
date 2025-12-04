@@ -19,6 +19,7 @@ SELECT
     referencia,
     custo_medio,
     SUM(quantidade) AS qtde_venda,
+    COUNT(referencia) AS numero_de_vendas,
     preco,
     SUM(custo_total) AS custo_total,
     SUM(total) AS faturamento,

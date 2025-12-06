@@ -68,3 +68,12 @@ sources:
             description: 'identificacao da linha do produto'
           - name: data_alteracao_estoque
             description: 'registro da data de alteração do estoque no sistema de origem'
+      - name: embalagens_correios
+        description: 'uma consulta no banco de todas as movimentacoes manuais de embalagem que contem a obs "correios".'
+        columns:
+         - name: codigo
+         - name: Descricao
+         - name: custo_medio
+         - name: Data_Movimento
+         - name: Qt_Saida
+         - name: Obs

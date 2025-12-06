@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: correios
     environment:
       POSTGRES_USER: ${USER_POSTGRES}
@@ -19,7 +19,7 @@ services:
       - db_net
 
   pgadmin:
-      container_name: pgadmin_web
+      container_name: pgadmin_correios
       image: dpage/pgadmin4
       environment:
         PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org

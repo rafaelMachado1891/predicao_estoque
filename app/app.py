@@ -6,6 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 import os
 import pyodbc
 from datetime import datetime
+from decimal import Decimal
 
 load_dotenv()
 
@@ -24,6 +25,7 @@ vendas = """
 		 A.Numero
 		,CONVERT(VARCHAR(10), A.Data_EM, 120) AS Data_EM
 		,D.Codigo
+		,D.Custo_Medio
 		,B.Quantidade
 		,b.Preco
 		,b.Preco * b.Quantidade as total
@@ -41,12 +43,13 @@ vendas = """
 	JOIN NotaS2 B
 	ON A.Numero = B.Numero
 
-	JOIN 
+	LEFT JOIN 
 		(
 			SELECT 
 			 A.CODIGO
 			,A.Descricao
 			,A.Referencia
+			,A.Custo_Medio
 			,B.descricao AS MARCA
 			,C.Descricao AS GRUPO
 			FROM Produtos A 
@@ -73,21 +76,22 @@ with engine.connect() as connection:
     df = pd.DataFrame(result.fetchall(), columns=result.keys()) 
 
 rename_columns = {'Numero': 'numero', 'Data_EM': 'data', 'Codigo': 'codigo', 'Quantidade': 'quantidade', 'Preco': 'preco', 'Total': 'total', 'Referencia': 'referencia', 'Pedido': 'pedido',
-       			  'MARCA': 'linha', 'GRUPO': 'grupo', 'ANO': 'ano', 'MES': 'mes', 'MES-ANO': 'mes_ano', 'NUMERO_SEMANA': 'semana'
+       			  'MARCA': 'linha', 'GRUPO': 'grupo', 'ANO': 'ano', 'MES': 'mes', 'MES-ANO': 'mes_ano', 'NUMERO_SEMANA': 'semana', 'Custo_Medio': 'custo_medio'
             }
 
 df = df.rename(columns=rename_columns,inplace=False)
 
-columns = ['numero', 'data', 'codigo', 'referencia', 'quantidade', 'preco', 'total', 'linha', 'grupo']
+columns = ['numero', 'data', 'codigo', 'referencia', 'custo_medio', 'quantidade', 'preco', 'total', 'linha', 'grupo']
 
 df = df.astype({
 	'numero': int,
 	'data':"datetime64[ns]",
 	'codigo': str,
 	'referencia': str,
+ 	'custo_medio':float,
 	'quantidade': int,
-	'preco': int,
-	'total': int,
+	'preco': float,
+	'total': float,
 	'linha': str,
 	'grupo': str
 })

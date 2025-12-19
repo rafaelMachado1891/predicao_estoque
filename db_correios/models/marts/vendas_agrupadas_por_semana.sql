@@ -30,7 +30,7 @@ resultado AS (
         v.total
     FROM vendas v
     JOIN dim_semana d ON v.data = d.data
-    JOIN estoque_correios e ON v.codigo = e.codigo
+    LEFT JOIN estoque_correios e ON v.codigo = e.codigo
 ),
 agrupamento AS (
     SELECT

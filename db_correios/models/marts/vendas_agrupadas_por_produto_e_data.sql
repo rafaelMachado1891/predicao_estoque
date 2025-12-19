@@ -30,7 +30,7 @@ resultado AS (
      COUNT(a.referencia) AS qtde_pedidos,
      b.estoque_minimo
     FROM vendas_agrupadas_por_data a
-    JOIN 
+    LEFT JOIN 
     estoque_minimo b ON a.codigo = b.codigo
     GROUP BY 
      a.data,

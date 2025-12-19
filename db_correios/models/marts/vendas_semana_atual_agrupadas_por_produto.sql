@@ -28,12 +28,15 @@ resultado AS (
 		a.codigo,
 		a.referencia,
 		a.quantidade,
-        c.estoque_minimo,
+		CASE 
+			WHEN
+        	c.estoque_minimo IS NULL THEN 0
+			ELSE c.estoque_minimo END AS estoque_minimo,
 		total
 	FROM vendas a 
 	JOIN semana_atual b 
 	ON a.data = b.data
-    JOIN estoque_correios c
+    LEFT JOIN estoque_correios c
     ON a.codigo = c.codigo
 ),
 agrupamento AS (

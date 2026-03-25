@@ -30,7 +30,7 @@ services:
         - pgadmin_data:/var/lib/pgadmin
         - ./files:/files
       ports:
-        - 5050:5050
+        - 5051:5050
       networks:
         - db_net
 

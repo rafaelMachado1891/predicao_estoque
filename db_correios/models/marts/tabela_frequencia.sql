@@ -11,6 +11,7 @@ WITH vendas AS (
 
 vendas_com_dimensao AS (
     SELECT 
+        v.data,
         v.codigo,
         v.referencia,
         d.year_number,
@@ -37,8 +38,8 @@ vendas_agrupadas_por_semana AS (
     SELECT
         a.codigo,
         a.referencia,
-        year_number,
-        iso_week_of_year AS semana_do_ano,
+        --year_number,
+       -- iso_week_of_year AS semana_do_ano,
         COUNT(a.referencia) AS contagem_pedidos,
         SUM(a.quantidade) AS quantidade,
         --b.estoque_minimo,
@@ -48,13 +49,13 @@ vendas_agrupadas_por_semana AS (
           --  b.estoque_minimo < SUM(a.quantidade) THEN 'compras excederam o estoque'
             --ELSE 'OK' END AS observacao_pedidos
     FROM vendas_com_dimensao a
-   -- JOIN estoque_minimo b ON a.codigo = b.codigo
+    JOIN estoque_minimo b ON a.codigo = b.codigo
     GROUP BY 
         a.codigo,
         a.referencia,
         --b.estoque_minimo,
-        year_number,
-        iso_week_of_year
+        data
+       -- iso_week_of_year
 ),
 
 calculo_das_vendas AS (
@@ -73,7 +74,7 @@ calculo_das_vendas AS (
             WHEN COALESCE(ROUND(STDDEV_SAMP(quantidade), 0), 0) = 0 THEN 1
             ELSE ROUND(STDDEV_SAMP(quantidade), 0)
         END AS desvio_padrao
-        --estoque_minimo
+        --estoque_minimo,
         --#,
         --#COUNT(select count(distinct(referencia)) from vendas_agrupadas_por_semana where obs_pedido = "compras excederam o estoque" )
     FROM vendas_agrupadas_por_semana 
@@ -114,8 +115,9 @@ ORDER BY
 )
 
 SELECT 
-    codigo,
-    referencia,
+    tabela_frequencia.codigo,
+    tabela_frequencia.referencia,
+    p.linha,
     frequencia,
     quantidade,
     media,
@@ -126,8 +128,10 @@ SELECT
     frequencia_acumulada,
     freq_relativa_acumulada_percent,    
     CASE WHEN 
-        freq_relativa_acumulada_percent <= 50 THEN calculo_estoque * 4
-        ELSE calculo_estoque * 3 END AS calculo_estoque,
+        freq_relativa_acumulada_percent <= 50 THEN calculo_estoque * 1
+        ELSE calculo_estoque * 1 END AS calculo_estoque,
     faturamento,
     custo_total
 FROM tabela_frequencia
+LEFT JOIN 
+    {{ ref('int_produtos') }} p ON tabela_frequencia.codigo = p.codigo

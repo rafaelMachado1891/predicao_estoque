@@ -1,14 +1,15 @@
 WITH int_vendas AS (
     SELECT 
         data,
-        codigo,
-        referencia,
+        d.codigo,
+        d.referencia,
         custo_medio,
         quantidade,
         preco,
         total,
         custo_total
     FROM {{ ref('stg_vendas') }}
+    JOIN {{ ref('stg_produtos') }} d ON stg_vendas.codigo = d.codigo
 ),
 estoque_minimo AS (
     SELECT 

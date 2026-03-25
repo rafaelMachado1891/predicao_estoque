@@ -77,3 +77,16 @@ sources:
          - name: Data_Movimento
          - name: Qt_Saida
          - name: Obs
+
+      - name: saldo_estoque
+        description: 'tabela geral com o saldo de estoque atualizado diariamente'
+        columns:
+          - name: codigo
+            description: 'identificado unico do produto'
+          
+          - name: data
+            description: 'data do ultimo registro do saldo de estoque no sistema de origem  '
+          
+          - name: saldo
+            description: 'saldo de estoque atualizado diariamente'
+            data_type: INTEGER

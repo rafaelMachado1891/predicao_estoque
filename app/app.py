@@ -20,7 +20,7 @@ DATA_BASE_URL = f"mssql+pyodbc://{USUARIO}:{PASSWORD}@{HOST_NAME}/{DATA_BASE}?dr
 engine = create_engine(DATA_BASE_URL)
 
 vendas = """
-   WITH VENDAS_CORREIOS AS (
+ WITH VENDAS_CORREIOS AS (
 	SELECT 
 		 A.Numero
 		,CONVERT(VARCHAR(10), A.Data_EM, 120) AS Data_EM
@@ -28,10 +28,12 @@ vendas = """
 		,D.Custo_Medio
 		,B.Quantidade
 		,b.Preco
-		,b.Preco * b.Quantidade as total
-		,D.Referencia
+		,ROUND(b.Preco * b.Quantidade,2) as total
+		,CASE WHEN D.Referencia IS NULL THEN 'SEM_REFERENCIA' ELSE D.Referencia END AS Referencia
 		,a.Pedido
-		,D.MARCA
+		,CASE WHEN D.MARCA IS NULL
+			THEN 'SEM_MARCA'
+		 ELSE D.MARCA END AS MARCA
 		,D.GRUPO
 		,YEAR(A.Data_EM)   AS ANO
 		,MONTH(A.Data_EM)  AS MES
@@ -48,12 +50,12 @@ vendas = """
 			SELECT 
 			 A.CODIGO
 			,A.Descricao
-			,A.Referencia
+   			,A.Referencia 
 			,A.Custo_Medio
 			,B.descricao AS MARCA
 			,C.Descricao AS GRUPO
 			FROM Produtos A 
-			JOIN 
+			LEFT JOIN 
 			marcas B 
 			ON B.codigo = A.Marca
 			JOIN 
@@ -193,6 +195,40 @@ with engine.connect() as connection:
 
 print(produtos)
 
+
+saldo_estoque = """
+
+		WITH saldo_estoque AS (
+			SELECT  
+				Cod_Produto AS codigo,
+				Data_Movimento AS data,
+				Qt_Atual AS saldo,
+				ROW_NUMBER() OVER (PARTITION BY Cod_Produto ORDER BY Data_Movimento DESC) AS saldo_estoque
+			FROM 
+				Movimento 
+			WHERE COD_PRODUTO IN (
+
+						SELECT 
+							codigo AS codigo
+
+						FROM Produtos WHERE Referencia LIKE('EC%') AND Situacao = 0
+					)
+		)
+
+		SELECT 
+			codigo,
+   			data,
+			saldo
+	
+   		FROM saldo_estoque where saldo_estoque = 1
+
+"""
+
+with engine.connect() as connection:
+    result = connection.execute(text(saldo_estoque))
+    
+    saldo_estoque = pd.DataFrame(result.fetchall(), columns=result.keys()) 
+
 USER_NAME_POSTGRES= os.getenv("USER_POSTGRES")
 PASSWORD_POSTGRES= quote_plus(os.getenv("PASSWORD_POSTGRES"))
 HOST_POSTGRE= os.getenv("HOST_POSTGRES")
@@ -208,6 +244,7 @@ with target_engine.execution_options(isolation_level="AUTOCOMMIT").connect() as 
     connection.execute(text('DROP TABLE IF EXISTS "vendas" CASCADE'))
     connection.execute(text('DROP TABLE IF EXISTS "estoque_minimo" CASCADE'))
     connection.execute(text('DROP TABLE IF EXISTS "produtos" CASCADE'))
+    connection.execute(text(f'DROP TABLE IF EXISTS "saldo_estoque" CASCADE'))
     
 df.to_sql(
 	name='vendas',
@@ -227,6 +264,14 @@ estoque_minimo.to_sql(
 
 produtos.to_sql(
 	name= 'produtos',
+	con=target_engine,
+	schema=os.getenv('SCHEMA'),
+	if_exists="append",
+	index=False
+)
+
+saldo_estoque.to_sql(
+    name='saldo_estoque',
 	con=target_engine,
 	schema=os.getenv('SCHEMA'),
 	if_exists="append",

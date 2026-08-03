@@ -33,7 +33,7 @@ resultado AS (
         a.quantidade,
         a.preco,
         a.total,
-        ROUND((a.total * (0.12 + 0.03+ 0.0065 + 0.0108+ 0.018 ) )+ a.custo_total,2) AS custo_total,
+        ROUND((a.total * (0.12 + 0.03+ 0.0065 + 0.0119+ 0.0198 ) )+ a.custo_total,2) AS custo_total,
         b.estoque_minimo
     FROM int_vendas a
     LEFT JOIN estoque_minimo b 

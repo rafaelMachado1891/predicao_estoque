@@ -53,6 +53,8 @@ sources:
            description: 'identificacao da linha do produto'
          - name: data_ultimo_movimento
            description: 'registro da ultima movimentacao no banco de dados de origem'
+         - name: grupo
+           description: 'categoria/tipo do produto'
       - name: estoque_minimo
         description: 'tabela geral com todos os produtos'
         columns:

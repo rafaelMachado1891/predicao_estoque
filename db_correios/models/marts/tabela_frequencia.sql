@@ -135,3 +135,5 @@ SELECT
 FROM tabela_frequencia
 LEFT JOIN 
     {{ ref('int_produtos') }} p ON tabela_frequencia.codigo = p.codigo
+ORDER BY 
+    ranking

@@ -15,7 +15,9 @@ USUARIO= os.getenv('USER')
 PASSWORD= quote_plus(os.getenv('PASS'))
 HOST_NAME= os.getenv('HOST')
 
-DATA_BASE_URL = f"mssql+pyodbc://{USUARIO}:{PASSWORD}@{HOST_NAME}/{DATA_BASE}?driver=ODBC+Driver+17+for+SQL+Server"
+DATA_BASE_URL = f"mssql+pyodbc://{USUARIO}:{PASSWORD}@{HOST_NAME}/{DATA_BASE}?driver=ODBC+Driver+18+for+SQL+Server&TrustServerCertificate=yes"
+
+print(DATA_BASE_URL.replace(PASSWORD, "******"))
 
 engine = create_engine(DATA_BASE_URL)
 

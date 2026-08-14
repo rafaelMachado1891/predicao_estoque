@@ -1,14 +1,26 @@
-# test_env.py
-from dotenv import load_dotenv
-import os
-from pathlib import Path
+import pyodbc
 
-print("Caminho:", Path(".").resolve())
+print("Drivers disponíveis:")
+print(pyodbc.drivers())
 
-load_dotenv(".env")
+print("\nTentando conectar...")
 
-print("DB_POSTGRES:", os.getenv("DB_POSTGRES"))
-print("USER_POSTGRES:", os.getenv("USER_POSTGRES"))
-print("PASSWORD_POSTGRES:", os.getenv("PASSWORD_POSTGRES"))
-print("HOST_POSTGRES:", os.getenv("HOST_POSTGRES"))
-print("PORT_POSTGRES:", os.getenv("PORT_POSTGRES"))
+conn_str = (
+    "DRIVER={ODBC Driver 18 for SQL Server};"
+    "SERVER=tcp:srv00dital,1433;"
+    "DATABASE=dital;"
+    "UID=Dital;"
+    "PWD=Dital@156197;"
+    "TrustServerCertificate=yes;"
+)
+
+conn = pyodbc.connect(conn_str)
+
+print("Conexão realizada com sucesso!")
+
+cursor = conn.cursor()
+cursor.execute("SELECT 1")
+
+print("Resultado:", cursor.fetchone())
+
+conn.close()

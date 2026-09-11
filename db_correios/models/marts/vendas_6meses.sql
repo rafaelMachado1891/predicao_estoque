@@ -56,8 +56,8 @@ ranking_vendas AS (
 		media,
 		desvio_padrao,
 		ROW_NUMBER() OVER (ORDER BY contagem_pedidos DESC ) AS ranking,
-		ROUND((media * 5) + (desvio_padrao * 1.65 * 2.24),0) AS calculo_estoque
+		ROUND(((media) + (desvio_padrao * 1.20))*5,0) AS calculo_estoque
 	FROM vendas_agrupadas
 )
 
-SELECT * FROM ranking_vendas
+SELECT a.*, b.estoque_minimo FROM ranking_vendas a LEFT JOIN {{ ref('int_estoque_minimo') }} b ON a.codigo = b.codigo

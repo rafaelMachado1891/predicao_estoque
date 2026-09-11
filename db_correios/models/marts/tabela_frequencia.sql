@@ -128,8 +128,8 @@ SELECT
     frequencia_acumulada,
     freq_relativa_acumulada_percent,    
     CASE WHEN 
-        freq_relativa_acumulada_percent <= 50 THEN calculo_estoque * 1
-        ELSE calculo_estoque * 1 END AS calculo_estoque,
+        freq_relativa_acumulada_percent <= 50 THEN calculo_estoque * 5
+        ELSE calculo_estoque * 3 END AS calculo_estoque,
     faturamento,
     custo_total
 FROM tabela_frequencia

@@ -7,6 +7,9 @@ WITH vendas AS (
         total,
         custo_total
     FROM {{ ref('int_vendas') }}
+    WHERE
+  --      data >= CURRENT_DATE - INTERVAL '4 months'
+    data >= '2026-07-01'
 ),
 
 vendas_com_dimensao AS (
@@ -49,7 +52,7 @@ vendas_agrupadas_por_semana AS (
           --  b.estoque_minimo < SUM(a.quantidade) THEN 'compras excederam o estoque'
             --ELSE 'OK' END AS observacao_pedidos
     FROM vendas_com_dimensao a
-    JOIN estoque_minimo b ON a.codigo = b.codigo
+    LEFT JOIN estoque_minimo b ON a.codigo = b.codigo
     GROUP BY 
         a.codigo,
         a.referencia,
@@ -107,7 +110,7 @@ SELECT
         ) AS freq_relativa_acumulada_percent,
     faturamento,
     custo_total,
-    ROUND(media + (1.2 * desvio_padrao),0) AS calculo_estoque 
+    ROUND(media + (1.00 * desvio_padrao),0) AS calculo_estoque 
 
 FROM calculo_das_vendas
 ORDER BY 

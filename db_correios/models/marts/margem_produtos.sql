@@ -1,35 +1,66 @@
-WITH vendas_produtos AS (
+
+WITH vendas_mes_corrente AS (
     SELECT 
-        data,
+        a.data,
+        b.linha,
+        a.codigo,
+        a.referencia,
+        a.custo_medio,
+        a.quantidade,
+        a.preco,
+        a.total AS faturamento,
+        a.impostos,
+        a.materia_prima
+
+    FROM {{ ref('int_vendas') }} a
+
+    LEFT JOIN {{ ref('int_produtos') }} b
+        ON a.codigo = b.codigo
+),
+
+resultado_margem AS (
+    SELECT 
+        linha,
         codigo,
         referencia,
         custo_medio,
-        quantidade,
         preco,
-        custo_total,
-        total
+        quantidade,
+        faturamento,
+        impostos,
+        materia_prima,
 
-    FROM 
+        faturamento - impostos - materia_prima AS resultado
 
-            {{ ref('int_vendas')}}
+    FROM vendas_mes_corrente
+
+    WHERE 
+        EXTRACT(MONTH FROM data) = 10
+        AND EXTRACT(YEAR FROM data) = 2026
 )
 
 SELECT 
+    linha,
     codigo,
     referencia,
-    avg(custo_medio) AS avg_custo_medio,
-    SUM(quantidade) AS qtde_venda,
-    COUNT(referencia) AS numero_de_vendas,
-    avg(preco) AS avg_preco,
-    SUM(custo_total) AS custo_total,
-    SUM(total) AS faturamento,
-    SUM(total) - SUM(custo_total) AS margem,
-    ROUND((SUM(total) - SUM(custo_total)) / SUM(total),2) AS mrg_percentual
+    preco,
+    custo_medio,
+    SUM(quantidade) AS quantidade,
+    ROUND(SUM(faturamento), 2) AS faturamento,
+    ROUND(SUM(impostos), 2) AS impostos,
+    ROUND(SUM(materia_prima), 2) AS materia_prima,
+    ROUND(SUM(resultado), 2) AS resultado,
 
-FROM vendas_produtos
--- WHERE EXTRACT(MONTH FROM data) = 11
-GROUP BY 
+    ROUND(
+        SUM(resultado) / NULLIF(SUM(faturamento), 0),
+        4
+    ) AS margem
+
+FROM resultado_margem
+
+GROUP BY
+    linha,
     codigo,
-    referencia
-   -- custo_medio,
-   -- preco
+    referencia,
+    preco,
+    custo_medio

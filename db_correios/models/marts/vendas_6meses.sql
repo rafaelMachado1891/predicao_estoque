@@ -7,7 +7,7 @@ WITH vendas_6_meses AS (
 	FROM 
         {{ ref('int_vendas') }}
 	WHERE
-		data >= '2026-01-01'
+		data >= '2026-06-01'
 ),
 vendas_agrupadas_por_data AS (
 	SELECT
